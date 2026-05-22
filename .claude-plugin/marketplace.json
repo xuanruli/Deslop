@@ -1,0 +1,21 @@
+{
+  "name": "deslop",
+  "owner": {
+    "name": "xuanruli"
+  },
+  "plugins": [
+    {
+      "name": "deslop",
+      "source": ".",
+      "version": "0.1.0",
+      "description": "对抗 AI slop 的工程原则集合：agent 架构 / 代码设计 / 命名 / 项目结构。",
+      "category": "productivity",
+      "keywords": [
+        "design-principles",
+        "coding-agent",
+        "architecture",
+        "naming"
+      ]
+    }
+  ]
+}
