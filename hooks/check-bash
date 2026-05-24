@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# Deslop PreToolUse hook: enforce package manager preferences
+# Blocks `npm install`, `yarn add`, `pip install`, `poetry add` and friends.
+# Hook input on stdin: { "tool_name": "Bash", "tool_input": { "command": "...", ... } }
+# Output (when blocking): { "decision": "block", "reason": "..." }
+
+set -euo pipefail
+
+input=$(cat)
+
+command=$(printf '%s' "$input" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))" 2>/dev/null || echo "")
+
+if [ -z "$command" ]; then
+  exit 0
+fi
+
+emit_block() {
+  reason="$1"
+  printf '{"decision":"block","reason":%s}\n' \
+    "$(printf '%s' "$reason" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")"
+  exit 0
+}
+
+# ---- JS/TS: pnpm only ----
+# Match npm/yarn install-style commands; allow `npm run`, `npm test`, `npm exec`,
+# `yarn run`, `yarn test`, `yarn dlx` (which are script runners, not installers).
+if [[ "$command" =~ (^|[^a-zA-Z_-])(npm|yarn)[[:space:]]+(install|i|add|ci|update|upgrade|remove|uninstall|rm) ]]; then
+  emit_block "Deslop 偏好：JS/TS 项目用 pnpm，不用 npm/yarn。
+将命令改成：
+  npm install <pkg>   →  pnpm add <pkg>
+  npm install         →  pnpm install
+  yarn add <pkg>      →  pnpm add <pkg>
+  npm ci              →  pnpm install --frozen-lockfile
+（规则来自 project-structure 原则 13；如确认要用 npm/yarn，绕过此 hook 显式说明原因。）"
+fi
+
+# ---- Python: uv only ----
+# Block `pip install`, `pip3 install`, `python -m pip install`, `poetry add`, etc.
+if [[ "$command" =~ (^|[^a-zA-Z_-])(pip|pip3)[[:space:]]+(install|uninstall) ]] \
+  || [[ "$command" =~ python[0-9.]*[[:space:]]+-m[[:space:]]+pip[[:space:]]+(install|uninstall) ]] \
+  || [[ "$command" =~ (^|[^a-zA-Z_-])poetry[[:space:]]+(add|install|remove|update) ]]; then
+  emit_block "Deslop 偏好：Python 项目用 uv，不用 pip/poetry。
+将命令改成：
+  pip install <pkg>   →  uv add <pkg>
+  pip install -r requirements.txt  →  uv sync
+  poetry add <pkg>    →  uv add <pkg>
+  poetry install      →  uv sync
+（规则来自 project-structure 原则 13；如确认要用 pip/poetry，绕过此 hook 显式说明原因。）"
+fi
+
+# ---- 顶层垃圾目录：mkdir utils / helpers / common / misc / shared / lib ----
+# 只在 mkdir 创建相对路径的顶层时触发；不拦截 src/utils 这种子作用域用法。
+if [[ "$command" =~ (^|[[:space:]]|;|&&|\|\|)mkdir([[:space:]]+-[a-zA-Z]+)*[[:space:]]+(\./)?(utils|helpers|common|misc|shared|lib)(/|[[:space:]]|$) ]]; then
+  matched=$(printf '%s' "$command" | grep -oE '(utils|helpers|common|misc|shared|lib)' | head -1)
+  emit_block "Deslop 偏好：顶层目录不允许使用 ${matched}/ 这类无领域含义的容器名。
+规则来自 project-structure 原则 1：目录名是名词、一个目录 = 一个概念。
+请按领域命名（auth/、payments/、realtime/、scheduler/ …）。
+子包内部小作用域 utils 可接受（如 src/auth/utils.ts），仅顶层禁用。"
+fi
+
+exit 0

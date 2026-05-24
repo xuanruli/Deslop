@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Deslop PreToolUse hook: block writes that create top-level junk directories.
+# Input on stdin: { "tool_name": "Write"|"Edit"|"MultiEdit", "tool_input": { "file_path": "...", ... } }
+
+set -euo pipefail
+
+input=$(cat)
+
+file_path=$(printf '%s' "$input" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('file_path',''))" 2>/dev/null || echo "")
+tool_name=$(printf '%s' "$input" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tool_name',''))" 2>/dev/null || echo "")
+
+if [ -z "$file_path" ]; then
+  exit 0
+fi
+
+emit_block() {
+  reason="$1"
+  printf '{"decision":"block","reason":%s}\n' \
+    "$(printf '%s' "$reason" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")"
+  exit 0
+}
+
+# Determine repo root (best-effort). If we're not in a git repo, fall back to PWD.
+repo_root=$(git -C "$(dirname "$file_path")" rev-parse --show-toplevel 2>/dev/null || pwd)
+
+# Normalize file_path to a path relative to repo_root, if possible.
+abs_path=$(python3 -c "import os,sys; print(os.path.abspath(sys.argv[1]))" "$file_path")
+rel_path=${abs_path#"$repo_root"/}
+
+# 只关心写入"顶层目录"下的文件：第一段路径必须命中黑名单。
+top_segment=$(printf '%s' "$rel_path" | awk -F/ '{print $1}')
+
+case "$top_segment" in
+  utils|helpers|common|misc|shared|lib)
+    # Only block if this is genuinely a top-level dir AND it's a new file being created.
+    # We can't easily tell "create vs edit existing" from hook input, so we always warn
+    # via block — if the dir already exists, the user can override.
+    if [ "$tool_name" = "Write" ]; then
+      emit_block "Deslop 偏好：顶层目录 ${top_segment}/ 是垃圾桶式命名。
+规则来自 project-structure 原则 1 + naming-principles 反模式 #1。
+请按领域 / 概念命名（如 auth/、payments/、scheduler/、realtime/）。
+子包内部小作用域 ${top_segment} 可以接受（src/auth/${top_segment}.ts），只禁顶层。
+若坚持要写入此路径，请在用户确认后重试。"
+    fi
+    ;;
+esac
+
+exit 0

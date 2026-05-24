@@ -34,13 +34,13 @@ src/
 
 ## 原则 1：目录名是名词，一个目录 = 一个概念
 
-好名字：`persistence/`、`realtime/`、`scheduler/`、`auth/`、`payments/`
+好名字：`persistence/`、`realtime/`、`scheduler/`、`auth/`、`payments/`。差名字：`utils/` / `helpers/` / `common/` / `shared/` / `misc/` / `lib/`（顶层时）。
 
-差名字：`utils/`、`helpers/`、`common/`、`shared/`、`misc/`、`lib/`（作为顶层时）
+**判断标准**：能不能一句话回答"这个目录负责什么单一职责"？答不出来就是垃圾桶。
 
-**判断标准**：能不能用一句话回答"这个目录里的代码负责什么单一职责"？答不出来就是垃圾桶目录。
+**例外**：领域目录内部小 `utils.ts` 可以（作用域受限）。
 
-**例外**：在某个领域目录**内部**有一个小 `utils.py`/`utils.ts` 放该领域专属的辅助函数是可以的（作用域受限）。但**顶层 `utils/`** 几乎总是设计失败的信号。
+> 顶层 `utils/helpers/common/misc/shared/lib` 的创建由 Deslop hook（`check-bash` / `check-write`）自动拦截。
 
 ## 原则 2：一个文件 = 一个概念
 
@@ -207,16 +207,9 @@ foo/
 
 ## 原则 13：包管理器的选择有差异，不要默认
 
-不同生态的包管理器**不是等价的**，选错会影响整个项目的体验和正确性：
+JS/TS → **pnpm**；Python → **uv**；Rust → cargo；Go → go modules。理由：严格隔离、内容寻址、原生 workspace、速度。
 
-| 生态 | 推荐 | 关键优势 |
-|---|---|---|
-| JavaScript/TypeScript | **pnpm**（不是 npm/yarn） | 严格隔离 + 内容寻址硬链接 + 原生 workspace + 防幽灵依赖 |
-| Python | **uv**（不是 pip/poetry） | 速度数量级提升 + workspace + 锁文件 |
-| Rust | cargo | 内置，原生 workspace |
-| Go | go modules + workspace | 内置 |
-
-**判断标准**：新项目不要假设"哪个都行"。每个生态选当下**最严格、最快、最有 workspace 支持**的那个。
+> 此规则由 Deslop 的 `hooks/check-bash` 在 `npm install` / `pip install` / `poetry add` 等命令上自动拦截，无需 agent 自检。
 
 ## 原则 15：用 workspace 管理本仓内部包
 

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "matcher": { "tool": "Bash" },
+        "command": "./hooks/check-bash"
+      },
+      {
+        "matcher": { "tool": "Write" },
+        "command": "./hooks/check-write"
+      },
+      {
+        "matcher": { "tool": "Edit" },
+        "command": "./hooks/check-write"
+      }
+    ]
+  }
+}
