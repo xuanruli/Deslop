@@ -32,7 +32,9 @@
 /plugin install deslop@deslop
 ```
 
-更新:`/plugin marketplace update deslop` → `/reload-plugins`。
+**建议开启自动更新**:进 `/plugin` → 选中 `deslop` marketplace → Enter → Enable auto-update。第三方 marketplace 默认是关的,开了之后每次启动自动拉最新。
+
+手动更新:`/plugin marketplace update deslop` → `/reload-plugins`。
 
 **npx skills / gh skill**(仅 skills,跨客户端;不含 hooks)
 
