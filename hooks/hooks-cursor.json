@@ -1,6 +1,11 @@
 {
   "version": 1,
   "hooks": {
+    "sessionStart": [
+      {
+        "command": "./hooks/session-context"
+      }
+    ],
     "preToolUse": [
       {
         "matcher": { "tool": "Bash" },

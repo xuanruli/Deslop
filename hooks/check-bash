@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
-# Deslop PreToolUse hook: enforce package manager preferences
-# Blocks `npm install`, `yarn add`, `pip install`, `poetry add` and friends.
-# Hook input on stdin: { "tool_name": "Bash", "tool_input": { "command": "...", ... } }
-# Output (when blocking): { "decision": "block", "reason": "..." }
+# Deslop PreToolUse(Bash): 拦 npm/yarn → pnpm、pip/poetry → uv、mkdir 顶层垃圾目录。
 
 set -euo pipefail
 
@@ -21,9 +18,6 @@ emit_block() {
   exit 0
 }
 
-# ---- JS/TS: pnpm only ----
-# Match npm/yarn install-style commands; allow `npm run`, `npm test`, `npm exec`,
-# `yarn run`, `yarn test`, `yarn dlx` (which are script runners, not installers).
 if [[ "$command" =~ (^|[^a-zA-Z_-])(npm|yarn)[[:space:]]+(install|i|add|ci|update|upgrade|remove|uninstall|rm) ]]; then
   emit_block "Deslop 偏好：JS/TS 项目用 pnpm，不用 npm/yarn。
 将命令改成：
@@ -34,8 +28,6 @@ if [[ "$command" =~ (^|[^a-zA-Z_-])(npm|yarn)[[:space:]]+(install|i|add|ci|updat
 （规则来自 project-structure 原则 13；如确认要用 npm/yarn，绕过此 hook 显式说明原因。）"
 fi
 
-# ---- Python: uv only ----
-# Block `pip install`, `pip3 install`, `python -m pip install`, `poetry add`, etc.
 if [[ "$command" =~ (^|[^a-zA-Z_-])(pip|pip3)[[:space:]]+(install|uninstall) ]] \
   || [[ "$command" =~ python[0-9.]*[[:space:]]+-m[[:space:]]+pip[[:space:]]+(install|uninstall) ]] \
   || [[ "$command" =~ (^|[^a-zA-Z_-])poetry[[:space:]]+(add|install|remove|update) ]]; then
@@ -48,8 +40,6 @@ if [[ "$command" =~ (^|[^a-zA-Z_-])(pip|pip3)[[:space:]]+(install|uninstall) ]] 
 （规则来自 project-structure 原则 13；如确认要用 pip/poetry，绕过此 hook 显式说明原因。）"
 fi
 
-# ---- 顶层垃圾目录：mkdir utils / helpers / common / misc / shared / lib ----
-# 只在 mkdir 创建相对路径的顶层时触发；不拦截 src/utils 这种子作用域用法。
 if [[ "$command" =~ (^|[[:space:]]|;|&&|\|\|)mkdir([[:space:]]+-[a-zA-Z]+)*[[:space:]]+(\./)?(utils|helpers|common|misc|shared|lib)(/|[[:space:]]|$) ]]; then
   matched=$(printf '%s' "$command" | grep -oE '(utils|helpers|common|misc|shared|lib)' | head -1)
   emit_block "Deslop 偏好：顶层目录不允许使用 ${matched}/ 这类无领域含义的容器名。

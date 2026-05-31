@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Deslop SessionStart hook: re-inject general rules at session start and after compaction.
+# Reads hooks/session-rules.md and emits it as additionalContext (the documented envelope).
+# Placeholder-safe: if the rules file is empty or comment-only, injects nothing.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+rules_file="${SCRIPT_DIR}/session-rules.md"
+
+[ -f "$rules_file" ] || exit 0
+
+python3 - "$rules_file" <<'PY'
+import json, re, sys
+
+with open(sys.argv[1], encoding="utf-8") as f:
+    content = f.read()
+
+# Treat a file that is empty or only HTML comment blocks / whitespace as "no rules yet".
+meaningful = re.sub(r"<!--.*?-->", "", content, flags=re.DOTALL).strip()
+
+if not meaningful:
+    sys.exit(0)
+
+print(json.dumps({
+    "hookSpecificOutput": {
+        "hookEventName": "SessionStart",
+        "additionalContext": content,
+    }
+}))
+PY
