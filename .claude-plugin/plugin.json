@@ -3,7 +3,7 @@
   "description": "一组对抗 AI 'slop' 代码的工程原则 skills：agent 架构、代码设计、命名、项目结构。",
   "version": "0.1.0",
   "author": {
-    "name": "Deslop Experiment"
+    "name": "xuanruli"
   },
   "repository": "https://github.com/xuanruli/Deslop",
   "license": "MIT",
