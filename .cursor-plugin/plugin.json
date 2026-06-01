@@ -1,0 +1,10 @@
+{
+  "name": "deslop",
+  "description": "一组对抗 AI 'slop' 代码的工程原则：agent 架构、代码设计、命名、项目结构。",
+  "version": "0.2.0",
+  "author": {
+    "name": "xuanruli"
+  },
+  "homepage": "https://github.com/xuanruli/Deslop",
+  "hooks": "./hooks/hooks-cursor.json"
+}

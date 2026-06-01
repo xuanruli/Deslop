@@ -1,23 +1,14 @@
 {
   "version": 1,
   "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "./hooks/check-bash"
+      }
+    ],
     "sessionStart": [
       {
         "command": "./hooks/session-context"
-      }
-    ],
-    "preToolUse": [
-      {
-        "matcher": { "tool": "Bash" },
-        "command": "./hooks/check-bash"
-      },
-      {
-        "matcher": { "tool": "Write" },
-        "command": "./hooks/check-write"
-      },
-      {
-        "matcher": { "tool": "Edit" },
-        "command": "./hooks/check-write"
       }
     ]
   }

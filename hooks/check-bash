@@ -1,20 +1,37 @@
 #!/usr/bin/env bash
-# Deslop PreToolUse(Bash): 拦 npm/yarn → pnpm、pip/poetry → uv、mkdir 顶层垃圾目录。
+# Deslop hook：拦 npm/yarn → pnpm、pip/poetry → uv、mkdir 顶层垃圾目录。
+# 自适应 Claude Code(PreToolUse Bash) 与 Cursor(beforeShellExecution)：靠 cursor_version 区分。
 
 set -euo pipefail
 
 input=$(cat)
 
-command=$(printf '%s' "$input" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))" 2>/dev/null || echo "")
+platform=$(printf '%s' "$input" | python3 -c "
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: d={}
+print('cursor' if 'cursor_version' in d else 'claude')" 2>/dev/null || echo claude)
 
-if [ -z "$command" ]; then
-  exit 0
+if [ "$platform" = cursor ]; then
+  command=$(printf '%s' "$input" | python3 -c "import json,sys; print(json.load(sys.stdin).get('command',''))" 2>/dev/null || echo "")
+else
+  command=$(printf '%s' "$input" | python3 -c "import json,sys; print(json.load(sys.stdin).get('tool_input',{}).get('command',''))" 2>/dev/null || echo "")
 fi
 
+allow() {
+  [ "$platform" = cursor ] && printf '{"permission":"allow"}\n'
+  exit 0
+}
+
+[ -z "$command" ] && allow
+
 emit_block() {
-  reason="$1"
-  printf '{"decision":"block","reason":%s}\n' \
-    "$(printf '%s' "$reason" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")"
+  esc=$(printf '%s' "$1" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
+  if [ "$platform" = cursor ]; then
+    printf '{"permission":"deny","agent_message":%s}\n' "$esc"
+  else
+    printf '{"decision":"block","reason":%s}\n' "$esc"
+  fi
   exit 0
 }
 
@@ -48,4 +65,4 @@ if [[ "$command" =~ (^|[[:space:]]|;|&&|\|\|)mkdir([[:space:]]+-[a-zA-Z]+)*[[:sp
 子包内部小作用域 utils 可接受（如 src/auth/utils.ts），仅顶层禁用。"
 fi
 
-exit 0
+allow

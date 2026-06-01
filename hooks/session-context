@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Deslop SessionStart hook: re-inject general rules at session start and after compaction.
-# Reads hooks/session-rules.md and emits it as additionalContext (the documented envelope).
-# Placeholder-safe: if the rules file is empty or comment-only, injects nothing.
+# Deslop sessionStart hook：session 启动 / compact 后注入 session-rules.md。
+# 自适应 Claude Code(SessionStart) 与 Cursor(sessionStart)：输出格式不同，靠 cursor_version 区分。
+# 占位安全：rules 文件为空或仅注释时不注入。
 
 set -euo pipefail
 
@@ -10,22 +10,32 @@ rules_file="${SCRIPT_DIR}/session-rules.md"
 
 [ -f "$rules_file" ] || exit 0
 
-python3 - "$rules_file" <<'PY'
+input=$(cat 2>/dev/null || echo "")
+platform=$(printf '%s' "$input" | python3 -c "
+import json,sys
+try: d=json.load(sys.stdin)
+except Exception: d={}
+print('cursor' if 'cursor_version' in d else 'claude')" 2>/dev/null || echo claude)
+
+python3 - "$rules_file" "$platform" <<'PY'
 import json, re, sys
 
-with open(sys.argv[1], encoding="utf-8") as f:
+path, platform = sys.argv[1], sys.argv[2]
+with open(path, encoding="utf-8") as f:
     content = f.read()
 
-# Treat a file that is empty or only HTML comment blocks / whitespace as "no rules yet".
+# 空文件或仅 HTML 注释 → 视为还没写规则，不注入。
 meaningful = re.sub(r"<!--.*?-->", "", content, flags=re.DOTALL).strip()
-
 if not meaningful:
     sys.exit(0)
 
-print(json.dumps({
-    "hookSpecificOutput": {
-        "hookEventName": "SessionStart",
-        "additionalContext": content,
-    }
-}))
+if platform == "cursor":
+    print(json.dumps({"additional_context": content}))
+else:
+    print(json.dumps({
+        "hookSpecificOutput": {
+            "hookEventName": "SessionStart",
+            "additionalContext": content,
+        }
+    }))
 PY

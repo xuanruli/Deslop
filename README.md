@@ -36,7 +36,19 @@
 
 手动更新:`/plugin marketplace update deslop` → `/reload-plugins`。
 
-**npx skills / gh skill**(仅 skills,跨客户端;不含 hooks)
+**Cursor**(本地装,含 skills + `/deslop` 命令)
+
+Cursor 没有"指向任意 repo 一行装"的去中心化机制(官方 marketplace 要审核),用本地安装:
+
+```bash
+git clone https://github.com/xuanruli/Deslop ~/.cursor/plugins/local/deslop
+```
+
+然后重启 Cursor 或 `Developer: Reload Window`。skills 和 `/deslop` 命令即生效。
+
+> hooks(pnpm/uv 拦截、session 铁律注入)因 Cursor 与 Claude Code 的 `hooks.json` schema 不同,不随本地装自动生效。需要的话把 `hooks/hooks-cursor.json` 的内容合并进你的 `~/.cursor/hooks.json`。
+
+**npx skills / gh skill**(仅 skills,跨客户端;不含 hooks / 命令)
 
 ```bash
 npx skills add xuanruli/Deslop -g
