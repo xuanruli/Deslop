@@ -19,10 +19,12 @@ description: 构建 AI agent 的架构原则。覆盖：事件驱动的输入与
 
 ## 3. State 与 Deps 严格分离
 
-| 类别 | 含义 | 特征 |
-|---|---|---|
-| State | 业务事实 | 可序列化、要锁、要持久化 |
-| Deps | 外部句柄 + 配置 | 含 socket / future、不持久化、重启重建 |
+
+| 类别    | 含义        | 特征                          |
+| ----- | --------- | --------------------------- |
+| State | 业务事实      | 可序列化、要锁、要持久化                |
+| Deps  | 外部句柄 + 配置 | 含 socket / future、不持久化、重启重建 |
+
 
 判断：能不能 `json.dumps(state)`？能 = 分对了。
 
@@ -32,12 +34,25 @@ description: 构建 AI agent 的架构原则。覆盖：事件驱动的输入与
 
 拆开才能：按 section 做 A/B testing、自由组合不同 section、按上下文动态注入或裁剪某些 section。一整块模板这些全做不了。
 
-## 5. runtime / sandbox / session 三者分离，各自能独立失败
+## 5. runtime / sandbox / session 三者分离
 
-参考 Anthropic Managed Agents 的拆法（"decouple the brain from the hands"）：
+参考 Anthropic Managed Agents（"decouple the brain from the hands"）：
 
-- **runtime / harness（大脑）**：跑 agent loop，**无状态**，host 在可随时重启的 container 上。
-- **sandbox（手）**：隔离的执行环境，tools 在里面跑，不持有凭证；它崩了不影响大脑。
-- **session**：append-only event log，**持久化在另一处**，活得比 harness 和 sandbox 都久。
+- **runtime（大脑）**：跑 loop，无状态，可随时重启。
+- **sandbox（手）**：隔离环境跑 tools，不持凭证。
+- **session**：append-only event log，独立持久化。
 
-两个好处：① 任一部件崩了或被替换，其它不受影响——sandbox 炸了整个程序不炸，`wake(sessionId)` 重读 log 就能恢复；② session log 在外面 = 天然的 trace / observability，失败可定位、可重放。
+好处：任一部件崩了不连累其它（sandbox 炸了重启即恢复），且 session log 天然就是 trace / 可重放。
+
+## 6. 渐进式暴露注意力，而不是一次性 offload context
+
+模型被 train 成用很多短 turn 思考。别一上来糊一大坨 context，用机制让**注意力**一点点聚焦到当下该看的——skills, keyword triggered instruction, system reminder, hook等类似的设计。重点是渐进暴露**注意力**，不是渐进暴露 context 本身。
+
+## 7. 给能力：直接定义 tool，还是封装成 CLI + skill
+
+两条路：① 直接定义一堆 tools；② 把能力封装成一个 CLI，再用 skill 教 agent 用它。
+
+- **tool**：UI 展示和 traceability 更好。
+- **CLI + skill**：能拼 pipeline、任意组合参数，且不受"工具数量不能太多"的限制。
+
+信号：当过多 tool 在做相似的事，把它们收成一个 CLI 往往更划算。
