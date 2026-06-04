@@ -124,6 +124,14 @@ def f(items=None):
 
 魔法常量、超时值、URL、feature flag → 配置层（env / config / DB）。硬编码 = 改值要重新部署、多环境难切换。
 
+## 18.1 多来源的值用 resolver 抽象，别存死值
+
+一个值可能来自字面量 / 环境变量 / shell 命令 / 运行时计算（典型：API key、header、路径）时，别在各处存死字符串 + 各处 if 判断来源。建模成"**一个待解析的字符串 + 一个 resolve 函数**":
+
+- 输入统一(`"literal"` / `"$ENV_VAR"` / `"!command"`)，resolver 决定怎么解。
+- 好处:密钥不进文件(指向 env / 命令)、值可动态、来源逻辑只有一处。
+- 判断信号:你开始在第二个地方写"如果以 `$` 开头就读环境变量"——该抽 resolver 了。
+
 ## 19. 测试和被测代码同位
 
 `channel.py` + `channel.test.py` 同目录。反模式：所有测试堆在仓库根 `tests/` —— 改实现忘改测试。

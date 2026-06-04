@@ -8,6 +8,7 @@
 | --- | --- |
 | [agent-design-principles](skills/agent-design-principles/SKILL.md) | 生产级 AI agent 架构:event-driven、工具调用、上下文管理、持久化 |
 | [code-design-principles](skills/code-design-principles/SKILL.md) | 写代码的决策:控制流、数据结构、错误处理、抽象时机、可测性 |
+| [typing-and-class-design](skills/typing-and-class-design/SKILL.md) | 类型与类设计:泛型、discriminated union、Result、class vs function、为成长而设计 |
 | [naming-principles](skills/naming-principles/SKILL.md) | 变量 / 函数 / 类型 / 文件命名 |
 | [project-structure](skills/project-structure/SKILL.md) | 目录拆分、文件命名、公开 API 设计 |
 
