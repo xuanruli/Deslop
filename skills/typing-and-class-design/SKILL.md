@@ -39,7 +39,7 @@ interface Model<TApi extends Api> {
 
 `PendingWrite = Omit<Entry, 存储层赋的字段>`。相关类型用 mapped / conditional 从同一个 union 推出来，源头改了它自动跟。
 
-## 5.1 用 typed 子接口的树组合，别让一个接口长成扁平大坨
+## 6. 用 typed 子接口的树组合，别让一个接口长成扁平大坨
 
 东西变多时，把相关字段收进一个**命名的子接口**（`CompactionSettings` / `RetrySettings`），让顶层接口变成"子接口的树"：
 
@@ -53,42 +53,42 @@ interface Settings {
 
 加功能 = 加一个新子接口 + 顶层加一个字段引用它，**不是**往一个 god 接口平铺第 N 个字段。子接口能独立复用、独立带默认值、独立演进。这是"为成长设计"在类型层最常用的一招——config、state、event payload 都适用。
 
-## 6. `Result<T,E>` 表达预期失败，`any` 只留信任边界
+## 7. `Result<T,E>` 表达预期失败，`any` 只留信任边界
 
 预期内的失败（文件不存在、解析错）返回 `Result`，不 throw；异常只留给真 bug。`any` 只允许出现在显式信任边界（外部 JSON 校验输出、跨系统类型擦除），别到处撒。
 
-## 7. 空接口 + declaration merging 当零成本扩展点
+## 8. 空接口 + declaration merging 当零成本扩展点
 
 ```ts
 interface CustomMessages {}  // 故意空
 type Message = BuiltinMessage | CustomMessages[keyof CustomMessages];
 ```
 
-下游 re-open 这个接口加自己的类型，核心不需要认识它们——对修改关闭、对扩展开放，全程类型安全、零运行时 registry。**这就是"为成长设计"的типичный手法。**
+下游 re-open 这个接口加自己的类型，核心不需要认识它们——对修改关闭、对扩展开放，全程类型安全、零运行时 registry。**这就是"为成长设计"的典型手法。**
 
-## 8. `Known | (string & {})` 开放字面量
+## 9. `Known | (string & {})` 开放字面量
 
 既要已知值的 autocomplete，又要接受任意字符串时，用 `KnownLiteral | (string & {})`，不要直接退化成 `string`。
 
 ## 类
 
-## 9. class 只用于"状态 + 不变量"
+## 10. class 只用于"状态 + 不变量"
 
 无状态逻辑 → 函数；纯数据 / 能力契约 → interface；**只有"有可变状态且要保护不变量"时才用 class**。别给一堆无状态函数硬包个 class。
 
-## 10. copy-on-assign + replace-don't-mutate
+## 11. copy-on-assign + replace-don't-mutate
 
 可被外部 assign 的字段，在 setter 里 `slice()` 拷贝（防 aliasing）；observer 可能持有的状态，**换新对象而不是原地改**（`pendingCalls = new Set(...)`），让旧快照一直安全。
 
-## 11. 封装严格度跟着不变量走
+## 12. 封装严格度跟着不变量走
 
 纯内存对象 → 公开可变字段、同步 setter 没问题（图省事）。**一旦 mutate 必须同步外部系统**（持久化 / 广播）→ 只能走 method，每个 method 内部保证"改 + 存 + 通知"原子完成。同一个核心，封装强度按"有没有外部不变量"分两档。
 
-## 12. 组合函数式核心 > 抽象基类继承
+## 13. 组合函数式核心 > 抽象基类继承
 
 把核心写成无状态函数，几个有状态的壳**组合**它，而不是拉一条继承链（避免脆弱基类）。真要继承，用**构造参数特化**（`super(predicates)`），不靠 override 行为。
 
-## 13. options-bag 构造器 + 少量 live setter
+## 14. options-bag 构造器 + 少量 live setter
 
 构造器收一个 options 对象、内部填默认值；之后要调的少数东西用 setter。别用望远镜式构造器（一长串位置参数）。
 
