@@ -148,6 +148,8 @@ CI 必须跑 formatter（black / prettier）+ linter（ruff / eslint）+ typeche
 
 ≥4 个分支按同一个 key 路由 → 用 dict 查表（`handlers[event.type](event)`）、method dispatch、或 `match (state, event)`。非法转移一眼可见，不会静默落 else。
 
+事件 ladder → dispatch 表的完整 before/after 见 [examples/refactor-main-fn.md](examples/refactor-main-fn.md)。
+
 ## 26. 同一段 5 行代码出现 3 次 → 抽 helper
 
 第 1 次直接写；第 2 次复制加 TODO；第 3 次抽。抽出来起一个**说清楚做什么**的名字（`upsert_file` / `make_event`），不是 `helper1`。
@@ -181,6 +183,14 @@ CI 必须跑 formatter（black / prettier）+ linter（ruff / eslint）+ typeche
 | `iter_*(...)` | 懒 generator，一个个 yield |
 
 看名字就知道：能不能流式、有没有 state、返回单值还是列表、有没有副作用。
+
+## 31. 主函数是 orchestrator，不是 procedure
+
+别"写长了再抽 helper"——那只是藏长度，形状还是一坨 procedure。先定形状（loop / pipeline / 状态机 + 几个命名 stage + 平的早退守卫），主函数 body 读起来像目录，干活逻辑在 stage 里。
+
+stacked if 几乎总是漏了结构：状态机（#25）/ 流水线（#29）/ 早退（#4）——认出用对形状，别硬抽 if 块。能按"做什么"命名 = 真 stage；只能按"在哪"命名（`helper2`）= 在切长度。
+
+完整 before/after 见 [examples/refactor-main-fn.md](examples/refactor-main-fn.md)。
 
 ---
 
