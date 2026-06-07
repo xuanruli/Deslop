@@ -62,16 +62,18 @@ def run(dry_run: bool = False) -> int:
 
 ## After —— 薄编排 + 设计好的 stage
 
+> 命名：脚本模块的函数没人从外部 import，不必每个都挂 `_`——`_` 只留给真正的内部 helper。
+
 `run` 读起来像目录：收集配置 →（要 plan 就打印返回）→ 执行。
 
 ```python
 def run(client: Anthropic, dry_run: bool = False) -> int:
-    _setup_logging()
-    config = _load_config(dry_run=dry_run)          # 纯：一次性收集输入
+    setup_logging()
+    config = load_config(dry_run=dry_run)          # 纯：一次性收集输入
     if dry_run:
-        print(json.dumps(_plan(config), indent=2, default=str))   # plan / execute 分开
+        print(json.dumps(plan(config), indent=2, default=str))   # plan / execute 分开
         return 0
-    return _execute(client, config)
+    return execute(client, config)
 ```
 
 env 来源做成 typed，`delete_after` 标志消失——"要不要删"是来源的属性：
@@ -86,7 +88,7 @@ class EnvSource:
     def resolve(cls) -> "EnvSource":
         if pre := os.environ.get("ENV_FILE_ID"):
             return cls(file_id=pre, payload=None)
-        return cls(file_id=None, payload=_build_env_payload())
+        return cls(file_id=None, payload=build_env_payload())
 ```
 
 文件生命周期用 context manager，不用 flag + 嵌套 try/finally：
@@ -97,30 +99,30 @@ def provisioned_env_file(client: Anthropic, source: EnvSource) -> Iterator[str]:
     if source.file_id:                 # preuploaded：用完不删
         yield source.file_id
         return
-    uploaded = _upload_env_file(client, source.payload)
+    uploaded = upload_env_file(client, source.payload)
     try:
         yield uploaded.id
     finally:
-        _try_delete_file(client, uploaded.id)
+        delete_file(client, uploaded.id)
 ```
 
-纯函数拼 plan / resources / kickoff（只收数据返数据），`_execute` 在边界处组合：
+纯函数拼 plan / resources / kickoff（只收数据返数据），`execute` 在边界处组合：
 
 ```python
-def _plan(c: RunConfig) -> dict: ...
-def _build_resources(file_id, memory_id) -> list[dict]: ...
-def _build_kickoff(c: RunConfig) -> str: ...
+def plan(c: RunConfig) -> dict: ...
+def build_resources(file_id, memory_id) -> list[dict]: ...
+def build_kickoff(c: RunConfig) -> str: ...
 
-def _execute(client: Anthropic, c: RunConfig) -> int:
-    agent_id, env_id = _resolve_agent_and_env(client)
+def execute(client: Anthropic, c: RunConfig) -> int:
+    agent_id, env_id = resolve_agent_and_env(client)
     with provisioned_env_file(client, c.env_source) as file_id:
-        resources = _build_resources(file_id, _resolve_memory_store_id(client))
+        resources = build_resources(file_id, resolve_memory_store_id(client))
         session = client.beta.sessions.create(
             agent=agent_id, environment_id=env_id,
             title=f"Daily aggregation {c.today}", resources=resources,
         )
         with hard_timeout(HARD_TIMEOUT_SECONDS):   # arm/disarm 收成 CM
-            _run_session(client, session.id, _build_kickoff(c))
+            run_session(client, session.id, build_kickoff(c))
     return 0
 ```
 
@@ -132,9 +134,9 @@ def _execute(client: Anthropic, c: RunConfig) -> int:
 | plan / execute 拆开，dry_run 不深埋 | early return + 结构化决策 |
 | `EnvSource` typed，干掉 `delete_after` | 用类型表达约束（typing-and-class-design） |
 | `provisioned_env_file` / `hard_timeout` CM | 资源管理用 context manager |
-| `_plan` / `_build_resources` / `_build_kickoff` 纯函数 | pure function 优先，IO 推边界 |
+| `plan` / `build_resources` / `build_kickoff` 纯函数 | pure function 优先，IO 推边界 |
 | `client` 作参数传进来 | 依赖注入，可测 |
-| 命名 stage（`_execute` / `_run_session`） | 函数名透露契约，不是 `helper2` |
+| 命名 stage（`execute` / `run_session`） | 函数名透露契约，不是 `helper2` |
 
 核心：helper 不是用来"缩长度"的，是设计出来的 stage。先把形状切成 `config → plan → execute` + 两个 RAII 抽象，主函数自然变薄。
 

@@ -55,3 +55,7 @@ description: 构建 AI agent 的架构原则。覆盖：事件驱动的输入与
 ## 10. transcript 消息类型 ≠ provider 消息类型
 
 内部消息（带 UI / 持久化的富字段、自定义 role）和发给 LLM 的 provider 消息**分开**，中间一个**单点转换** seam。UI / 存储想带多少额外信息都行，模型永远看干净过滤版，两边各自演进不互相污染。
+
+## 11. 多来源在边界归一成 canonical 内部请求
+
+多个输入协议 / 来源（不同 provider、CLI、HTTP、stdio）在**边界**先 adapt 成同一个内部请求类型，下游只有一条执行路径。#10 是它的特例（只管消息方向）。别每加一种来源就 fork 一条 if 分支或一套并行实现——变体收在边界的 adapter 里，core 永远只见 canonical 形态。

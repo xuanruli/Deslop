@@ -190,6 +190,8 @@ CI 必须跑 formatter（black / prettier）+ linter（ruff / eslint）+ typeche
 
 stacked if 几乎总是漏了结构：状态机（#25）/ 流水线（#29）/ 早退（#4）——认出用对形状，别硬抽 if 块。能按"做什么"命名 = 真 stage；只能按"在哪"命名（`helper2`）= 在切长度。
 
+密集 / 性能 / 丑但必要的代码（手写循环、位运算、缓存）也关进叶子函数，spine 保持声明式——脏在叶子，主干干净。
+
 完整 before/after 见 [examples/refactor-main-fn.md](examples/refactor-main-fn.md)。
 
 ---
