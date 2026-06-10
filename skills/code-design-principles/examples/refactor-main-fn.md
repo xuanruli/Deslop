@@ -247,8 +247,8 @@ class SessionDrainer:
 
 ## 为什么更好
 
-- **加事件类型 = 往表里加一行**，不是再 `elif` 一段（#25 dispatch map）。
-- **三种关注点分开**：纯日志 handler、`ThreadArchiver`（状态+不变量 → class）、`SessionDrainer` 把"会话何时停"的状态机收在一处（#3）。
+- **加事件类型 = 往表里加一行**，不是再 `elif` 一段（#24 dispatch map）。
+- **三种关注点分开**：纯日志 handler、`ThreadArchiver`（状态+不变量 → class）、`SessionDrainer` 把"会话何时停"的状态机收在一处（#4）。
 - **`getattr(event, ...)` 防御性访问收口**到 `_event_type` / `_stop_reason` 几个小 accessor，handler 内部干净。
 
 和上半部分同一个道理：**长 ladder 背后是 `event → handler` 的 dispatch + 一个停止状态机**——认出结构、用对形状，长度自己就下来了。

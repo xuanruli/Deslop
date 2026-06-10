@@ -8,7 +8,7 @@
     {
       "name": "deslop",
       "source": "./",
-      "version": "0.2.0",
+      "version": "0.3.0",
       "description": "对抗 AI slop 的工程原则集合：agent 架构 / 代码设计 / 命名 / 项目结构。",
       "category": "productivity",
       "keywords": [
