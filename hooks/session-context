@@ -15,7 +15,7 @@ platform=$(printf '%s' "$input" | python3 -c "
 import json,sys
 try: d=json.load(sys.stdin)
 except Exception: d={}
-print('cursor' if 'cursor_version' in d else 'claude')" 2>/dev/null || echo claude)
+print('cursor' if 'cursor_version' in d else ('codex' if 'turn_id' in d else 'claude'))" 2>/dev/null || echo claude)
 
 python3 - "$rules_file" "$platform" <<'PY'
 import json, re, sys
@@ -31,6 +31,8 @@ if not meaningful:
 
 if platform == "cursor":
     print(json.dumps({"additional_context": content}))
+elif platform == "codex":
+    print(json.dumps({"hookSpecificOutput": {"additionalContext": content}}))
 else:
     print(json.dumps({
         "hookSpecificOutput": {
