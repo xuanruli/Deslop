@@ -18,7 +18,7 @@
 
 | Hook | 拦截 |
 | --- | --- |
-| `check-bash` | `npm/yarn install` → pnpm;`pip/poetry` → uv;`mkdir` 顶层垃圾目录 |
+| `check-bash` | `pip/poetry` → uv;`mkdir` 顶层垃圾目录 |
 | `check-write` | `Write` 到顶层 `utils/helpers/common/misc/shared/lib/` |
 | `session-context` | 每次 session 启动 / compact 后注入 `session-rules.md` 里的铁律 |
 
@@ -47,7 +47,7 @@ git clone https://github.com/xuanruli/Deslop ~/.cursor/plugins/local/deslop
 
 然后重启 Cursor 或 `Developer: Reload Window`。skills 和 `/deslop` 命令即生效。
 
-> hooks(pnpm/uv 拦截、session 铁律注入)因 Cursor 与 Claude Code 的 `hooks.json` schema 不同,不随本地装自动生效。需要的话把 `hooks/hooks-cursor.json` 的内容合并进你的 `~/.cursor/hooks.json`。
+> hooks(uv 拦截、session 铁律注入)因 Cursor 与 Claude Code 的 `hooks.json` schema 不同,不随本地装自动生效。需要的话把 `hooks/hooks-cursor.json` 的内容合并进你的 `~/.cursor/hooks.json`。
 
 **npx skills / gh skill**(仅 skills,跨客户端;不含 hooks / 命令)
 

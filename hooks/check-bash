@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deslop hook：拦 npm/yarn → pnpm、pip/poetry → uv、mkdir 顶层垃圾目录。
+# Deslop hook：拦 pip/poetry → uv、mkdir 顶层垃圾目录。
 # 自适应 Claude Code(PreToolUse Bash) 与 Cursor(beforeShellExecution)：靠 cursor_version 区分。
 
 set -euo pipefail
@@ -36,16 +36,6 @@ emit_block() {
   fi
   exit 0
 }
-
-if [[ "$command" =~ (^|[^a-zA-Z_-])(npm|yarn)[[:space:]]+(install|i|add|ci|update|upgrade|remove|uninstall|rm) ]]; then
-  emit_block "Deslop 偏好：JS/TS 项目用 pnpm，不用 npm/yarn。
-将命令改成：
-  npm install <pkg>   →  pnpm add <pkg>
-  npm install         →  pnpm install
-  yarn add <pkg>      →  pnpm add <pkg>
-  npm ci              →  pnpm install --frozen-lockfile
-（规则来自 project-structure 原则 13；如确认要用 npm/yarn，绕过此 hook 显式说明原因。）"
-fi
 
 if [[ "$command" =~ (^|[^a-zA-Z_-])(pip|pip3)[[:space:]]+(install|uninstall) ]] \
   || [[ "$command" =~ python[0-9.]*[[:space:]]+-m[[:space:]]+pip[[:space:]]+(install|uninstall) ]] \

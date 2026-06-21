@@ -1,7 +1,7 @@
 {
   "name": "deslop",
   "description": "一组对抗 AI 'slop' 代码的工程原则 skills：agent 架构、代码设计、命名、项目结构。",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "xuanruli"
   },
